@@ -1,14 +1,20 @@
 import React from "react";
+import agent from "./service/agent";
+import { LoadingButton } from "@mui/lab";
+import { TableContainer, Table, TableHead, TableRow, TableCell, TableBody } from "@mui/material";
 
 const API_URL = 'https://localhost:7246/api/';
-
+const webAPIHeader = {
+    "Content-Type": "application/json;odata=verbose"
+};
 class User extends React.Component<any, any> {
     constructor(props: any) {
         super(props);
         this.state = {
             isAuthenticated: false,
             username: '',
-            users: []
+            users: [],
+            loading: false
         };
     }
 
@@ -21,68 +27,104 @@ class User extends React.Component<any, any> {
     }
 
     handleError(error: any) {
-        console.log(error.message);
+        console.log(error);
     }
 
     handleLogin() {
-        const requestOpions ={
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ username: 'admin', password: '123456' })
-        };
+        this.setState({loading: true});
+        const body = JSON.stringify({
+            username: 'admin', password: '123456'
+        });
+        const header = {
+            headers: {
+              'Content-Type': 'application/json'
+            }
+        }
 
-        fetch(API_URL + 'Users/authenticate', requestOpions)
-            .then(this.handleResponse)
+        agent.User.getToken('Users/authenticate', body, header)
+            //.then(this.handleResponse)
             .then((data) => {
+                console.log(data);
                 localStorage.setItem("token", data.token);
                 this.setState({
                     isAuthenticated: true,
                     username: data.fullName
                 });
+                
             })
-            .catch(this.handleError);
+            .catch(this.handleError)
+            .finally(() => this.setState({loading: false}));
     }
 
     handleUserList() {
+        this.setState({loading: true});
         const token = localStorage.getItem('token') ?? '';
-        const requestOpions ={
-            method: 'GET',
+        const header = {
             headers: {
-                'Content-Type': 'application/json',
-                'Authorization': 'Bearer ' + token,
+              'Content-Type': 'application/json',
+              'Authorization': 'Bearer ' + token,
             }
-        };
-
-        fetch(API_URL + 'users', requestOpions)
-            .then(this.handleResponse)
+        }
+        //fetch(API_URL + 'users', requestOpions)
+        agent.User.getUserList('users', header)
+            //.then(this.handleResponse)
             .then((data) => {
                 this.setState({ users: data });
             })
-            .catch(this.handleError);
+            .catch(this.handleError)
+            .finally(() => this.setState({loading: false}))
     }
     render(): React.ReactNode {
         const { users, isAuthenticated, username } = this.state;
+        //if(this.state.loading) return <LoadingComponent/>
         return (
             <div>
                 <h1>Sample ReactJS app using fetch API.</h1>
                 <div>
-                    {!isAuthenticated && <button onClick={() => this.handleLogin()}>Login</button>}
+                    {!isAuthenticated &&
+                    <LoadingButton
+                    loading={this.state.loading}
+                    onClick={() => this.handleLogin()}
+                    size="small"
+                    sx={{backgroundColor: "#DDDDDD"}}>Login</LoadingButton>}
                     {isAuthenticated && (
                         <>
                             <span>Hi, {username}</span>&nbsp;
-                            <button onClick={() => this.handleUserList()}>Load users</button>
+                            <LoadingButton
+                                loading={this.state.loading}
+                                onClick={() => this.handleUserList()}
+                                size="small"
+                                sx={{backgroundColor: "#DDDDDD"}}>Load users</LoadingButton>
                         </>
                     )}
                 </div>
                 <p>List of users</p>
-                <ul>
+                <TableContainer >
+                <Table sx={{ maxWidth: 250, align: "center", textAlign: "center" }} aria-label="simple table">
+                    <TableHead>
+                    <TableRow>
+                        <TableCell>Name</TableCell>
+                        <TableCell align="right">Title</TableCell>
+                    </TableRow>
+                    </TableHead>
+                    <TableBody>
                     {users.map((user: any) => (
-                        <li key={user.id}>{user.name} ({user.title})</li>
+                        <TableRow
+                        key={user.name}
+                        sx={{ '&:last-child td, &:last-child th': { border: 0 } }}
+                        >
+                        <TableCell component="th" scope="row">
+                            {user.name}
+                        </TableCell>
+                        <TableCell align="right">{user.title}</TableCell>
+
+                        </TableRow>
                     ))}
-                </ul>
+                    </TableBody>
+                </Table>
+                </TableContainer>
             </div>
         );
     }
 }
-
 export default User;
