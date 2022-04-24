@@ -74,6 +74,7 @@ class User extends React.Component<any, any> {
             .catch(this.handleError)
             .finally(() => this.setState({loading: false}))
     }
+    
     render(): React.ReactNode {
         const { users, isAuthenticated, username } = this.state;
         //if(this.state.loading) return <LoadingComponent/>

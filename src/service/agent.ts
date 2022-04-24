@@ -1,7 +1,15 @@
 import axios, { AxiosError, AxiosResponse } from "axios";
 axios.defaults.baseURL = 'https://localhost:7246/api/';
 //axios.defaults.withCredentials = true;
-
+// Add a request interceptor
+// axios.interceptors.request.use(async function (config) {
+//     // Do something before request is sent
+//     await sleep();
+//         return config;
+//   }, function (error) {
+//     // Do something with request error
+//     return Promise.reject(error);
+//   });
 const responseBody = (response: AxiosResponse) => response.data;
 const sleep = () => new Promise(resolve => {setTimeout(resolve, 1000)});
 axios.interceptors.response.use(async response => {
